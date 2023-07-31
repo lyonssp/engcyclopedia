@@ -11,8 +11,8 @@ from lib.scrape.scrape import MediumScraper
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 if __name__ == "__main__":
-    publisher = "netflix"
-    archive_url = "https://netflixtechblog.com/archive"
+    publisher = "pinterest"
+    archive_url = "https://medium.com/pinterest-engineering/archive"
 
     scraper = MediumScraper(publisher, archive_url)
 

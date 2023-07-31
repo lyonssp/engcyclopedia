@@ -30,10 +30,6 @@ class MediumScraper():
 
         return ' '.join(article.stripped_strings)
 
-    def _get_article_content(self, url):
-        response = requests.get(url, allow_redirects=True)
-        return self._extract_content(response.text)
-
     def _get_img(self, img_url, dest_folder, dest_filename):
         ext = img_url.split('.')[-1]
         if len(ext) > 4:
@@ -45,11 +41,21 @@ class MediumScraper():
 
     def _get_article_metadata(self, year, month):
         article_counter = 0
-        url = f"{self._archive_url}/{year}/{month}"
+        url = f"{self._archive_url}/{year}/{month:02d}"
+
+        self._logger.info(f"scraping {url}")
+
         response = requests.get(url, allow_redirects=True)
 
         if response.status_code > 299:
-            self._logger.info(f"skipping url: {url}")
+            self._logger.info(
+                f"skipping url for bad status code: url={url} status_code={response.status_code}")
+            return None
+
+        # requests for months with no blog posts return the archive
+        # page for the given year or the archive main page if the year has no blog posts
+        if response.url == f"{self._archive_url}/{year}":
+            self._logger.info(f"no blog posts for {url}")
             return None
 
         data = []
@@ -94,16 +100,16 @@ class MediumScraper():
         years = range(2023, 2024)
         months = range(1, 13)
 
-        print("=== dates dimensions ===")
-        print("years: ", years)
-        print("months: ", months)
+        self._logger.info("=== dates dimensions ===")
+        self._logger.info(f"years: {years}")
+        self._logger.info(f"months: {months}")
 
         data = []
         for year in years:
             for month in months:
-                print("Scraping: ", year, month)
                 scraped = self._get_article_metadata(year, month)
-                data.extend(scraped)
+                if scraped is not None:
+                    data.extend(scraped)
 
                 time.sleep(2)
 
@@ -119,3 +125,7 @@ class MediumScraper():
         df.to_json(writer, orient='records')
 
         return data
+
+    def scrape_article_content(self, url):
+        response = requests.get(url, allow_redirects=True)
+        return self._extract_content(response.text)
