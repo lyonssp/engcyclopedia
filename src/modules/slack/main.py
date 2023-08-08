@@ -1,8 +1,16 @@
+import logging
+import sys
 import time
+from bs4 import BeautifulSoup
 import pandas as pd
+import requests
 from tqdm import tqdm
 from trafilatura.sitemaps import sitemap_search
 from trafilatura import fetch_url, extract, bare_extraction
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
 def get_urls_from_sitemap(resource_url: str) -> list:
@@ -10,39 +18,78 @@ def get_urls_from_sitemap(resource_url: str) -> list:
     Get a list of urls from a sitemap with trafilatura
     """
     urls = sitemap_search(resource_url)
-    #downloaded = fetch_url(resource_url, target_language='en')
-    #result = bare_extraction(downloaded, output_format='python', include_links=True)
 
-    return urls
+    # filter out urls that are not articles
+    tags_prefix = 'https://slack.engineering/tags'
+    skip_pages = ['https://slack.engineering',
+                  'https://slack.engineering/categories/uncategorized/']
+    filtered = filter(lambda x: not x.startswith(tags_prefix), urls)
+    filtered = filter(lambda x: x not in skip_pages, filtered)
+
+    return list(filtered)
 
 
-def extract_article(url: str) -> dict:
+def extract_content(html):
     """
-    Extract article from a url
+    Remove html tags from an article's content
     """
-    downloaded = fetch_url(url)
-    article = extract(downloaded, favor_precision=True)
 
-    return article
+    soup = BeautifulSoup(html, "html.parser")
+
+    article = soup.find('article')
+
+    for data in article(['style', 'script']):
+        data.decompose()
+
+    return ' '.join(article.stripped_strings)
 
 
-def create_dataset(list_of_websites: list) -> pd.DataFrame:
-    """
-    Create a dataframe from a list of sitemaps that is passed to get_urls_from_sitemap
-    """
+def extract_title(html):
+    soup = BeautifulSoup(html, "html.parser")
+    return soup.find('h1').text
+
+
+def extract_subtitle(html):
+    soup = BeautifulSoup(html, "html.parser")
+    return soup.find('div', class_='carousel-item__content').text
+
+
+def extract_thumbnail(html):
+    soup = BeautifulSoup(html, "html.parser")
+    element = soup.find('img', class_='wp-post-image')
+    return element['src']
+
+
+def create_dataset(url: str) -> pd.DataFrame:
+    cols = ['id',
+            'url',
+            'title',
+            'subtitle',
+            'image',
+            'content',
+            'publication',
+            'date']
+
     data = []
-    for website in tqdm(list_of_websites, desc="Websites"):
-        urls = get_urls_from_sitemap(website)
-        print(urls)
-        for url in tqdm(urls, desc="URLs"):
-            d = {
-                'url': url,
-                "article": extract_article(url)
-            }
+    urls = get_urls_from_sitemap(url)
+    for url in tqdm(urls, desc="URLs"):
+        try:
+            response = requests.get(url, allow_redirects=True)
+            d = [hash(url),
+                 url,
+                 extract_title(response.text),
+                 extract_subtitle(response.text),
+                 extract_thumbnail(response.text),
+                 extract_content(response.text),
+                 'slack',
+                 ''
+                 ]
             data.append(d)
             time.sleep(0.5)
+        except Exception as e:
+            logger.error(f"Error for url {url}: {e}")
 
-    df = pd.DataFrame(data)
+    df = pd.DataFrame(data, columns=cols)
     df = df.drop_duplicates()
     df = df.dropna()
 
@@ -50,13 +97,9 @@ def create_dataset(list_of_websites: list) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-    # place your data sources here
-    list_of_websites = [
-        "https://slack.engineering/sitemap_index.xml"
-        #"https://www.canva.dev/sitemap.xml"
-        #"https://eng.wealthfront.com"
-    ]
+    publisher = "slack"
+    sitemap_url = "https://slack.engineering/sitemap_index.xml"
 
-    df = create_dataset(list_of_websites)
-
-    df.to_csv("dataset.csv", index=False)
+    with open(f'data/{publisher}.json', 'wb') as f:
+        df = create_dataset(sitemap_url)
+        df.to_json(f, orient="records")
