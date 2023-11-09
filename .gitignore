@@ -3,4 +3,9 @@ certs
 .env
 data
 images
+
 terraform/.terraform
+terraform/lambda_package.zip
+terraform/terraform.tfstate.backup
+
+src/index/package/*
