@@ -10,3 +10,5 @@ terraform/lambda_package.zip
 terraform/terraform.tfstate.backup
 
 src/index/package/*
+
+scratch.txt
