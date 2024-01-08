@@ -10,6 +10,8 @@ tqdm = "*"
 requests = "*"
 beautifulsoup4 = "*"
 elasticsearch = "*"
+requests-aws4auth = "*"
+urllib3 = "==1.26.6"
 
 [dev-packages]
 

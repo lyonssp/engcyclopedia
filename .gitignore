@@ -5,10 +5,12 @@ certs
 data
 images
 
+# Terraform artifacts
 terraform/.terraform
 terraform/lambda_package.zip
 terraform/terraform.tfstate.backup
 
-src/index/package/*
+# Build artifacts
+.build
 
 scratch.txt

@@ -93,6 +93,7 @@ resource "aws_iam_policy" "opensearch_access_policy" {
         Action = [
           "es:ESHttpGet",
           "es:ESHttpPut",
+          "es:ESHttpPost",
         ],
         Resource = [
           "arn:aws:es:us-east-1:${data.aws_caller_identity.current.account_id}:domain/${aws_elasticsearch_domain.core_search.domain_name}/*"

@@ -1,16 +1,23 @@
 SHELL=/bin/bash
 DIR=$(PWD)
+SITE_PACKAGES=$(shell scripts/find-site-packages.sh)
 
-package:
-	pushd src/index/package && \
-	zip -r ${DIR}/terraform/lambda_package.zip . && \
-	popd && \
-	pushd src/index && \
-	zip ${DIR}/terraform/lambda_package.zip lambda_function.py && \
+clean:
+	rm -rf .build
+
+package: clean
+	mkdir .build
+	pipenv install
+	zip -j .build/lambda_package.zip src/index/lambda_function.py
+	pushd ${SITE_PACKAGES}; \
+	zip -r ${DIR}/.build/lambda_package.zip .; \
 	popd
 
 plan:
-	aws-vault exec sean.lyons --no-session -- terraform -chdir=terraform plan
+	aws-vault exec engcyclopedia --no-session -- terraform -chdir=terraform plan
 
-deploy:
-	aws-vault exec sean.lyons --no-session -- terraform -chdir=terraform apply
+deploy: package
+	cp -R terraform .build
+	cp .build/lambda_package.zip .build/terraform
+	aws-vault exec engcyclopedia --no-session -- terraform -chdir=.build/terraform init
+	aws-vault exec engcyclopedia --no-session -- terraform -chdir=.build/terraform apply
