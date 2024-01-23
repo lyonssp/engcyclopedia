@@ -8,9 +8,9 @@ clean:
 package: clean
 	mkdir .build
 	pipenv install
-	zip -j .build/lambda_package.zip src/index/lambda_function.py
+	zip -j9 .build/lambda_package.zip src/index/lambda_function.py
 	pushd ${SITE_PACKAGES}; \
-	zip -r ${DIR}/.build/lambda_package.zip .; \
+	zip -r9 ${DIR}/.build/lambda_package.zip .; \
 	popd
 
 plan:

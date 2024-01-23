@@ -6,7 +6,6 @@ import pandas as pd
 import requests
 from tqdm import tqdm
 from trafilatura.sitemaps import sitemap_search
-from trafilatura import fetch_url, extract, bare_extraction
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -43,6 +42,8 @@ def extract_content(html):
 
     return ' '.join(article.stripped_strings)
 
+def id_from_url(url):
+    return hash(url) % ((sys.maxsize + 1) * 2)
 
 def extract_title(html):
     soup = BeautifulSoup(html, "html.parser")
@@ -75,7 +76,7 @@ def create_dataset(url: str) -> pd.DataFrame:
     for url in tqdm(urls, desc="URLs"):
         try:
             response = requests.get(url, allow_redirects=True)
-            d = [hash(url),
+            d = [id_from_url(url),
                  url,
                  extract_title(response.text),
                  extract_subtitle(response.text),

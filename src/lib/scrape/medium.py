@@ -1,7 +1,5 @@
 import sys
-from elasticsearch import Elasticsearch
 import requests
-import pandas as pd
 import logging
 import time
 from bs4 import BeautifulSoup

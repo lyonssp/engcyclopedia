@@ -1,14 +1,6 @@
 # Engcyclopedia
 
-A search engine for engineering blogs
-
-## Setup
-
-Start a local elasticsearch instance
-
-```
-docker-compose up
-```
+A natural language search engine for engineering blogs
 
 ## Scraping
 
@@ -16,8 +8,16 @@ docker-compose up
 pipenv run python src/modules/{module}/scrape.py
 ```
 
-## Indexing
+## Upload Scrape Data
 
 ```
-pipenv run python src/modules/{module}/index.py
+aws-vault exec engcylopedia -- aws s3 cp data/{module}.json s3://engcyclopedia-scrape-data/{module}.json
 ```
+
+## Upload Embeddings
+
+```
+aws-vault exec engcylopedia -- pipenv run python src/embeddings/upload_embeddings.py
+```
+
+Note: currently hard-coded to upload slack embeddings for testing
