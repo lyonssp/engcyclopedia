@@ -1,6 +1,7 @@
-from src.lib.scrape.scrape import MediumScraper
 import sys
 import logging
+
+from lib.scrape.medium import MediumScraper
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 

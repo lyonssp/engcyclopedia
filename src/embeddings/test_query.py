@@ -1,9 +1,5 @@
-import json
-
-import boto3
 import pinecone
 import requests
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 hf_token = "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"
 pinecone_api_key = "3b3a3c31-e934-461c-ac1b-02334c883265"

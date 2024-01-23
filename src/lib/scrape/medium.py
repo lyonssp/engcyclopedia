@@ -1,8 +1,11 @@
 import sys
+
+import pandas as pd
 import requests
 import logging
 import time
 from bs4 import BeautifulSoup
+from tqdm import tqdm
 
 
 class MediumScraper():
@@ -103,11 +106,21 @@ class MediumScraper():
         self._logger.info(f"months: {months}")
 
         data = []
-        for year in years:
-            for month in months:
+        for year in tqdm(years):
+            for month in tqdm(months):
+                url = f"{self._archive_url}/{year}/{month:02d}"
                 scraped = self._get_article_metadata(year, month)
                 if scraped is not None:
-                    data.extend(scraped)
+                    d = [id_from_url(url),
+                         url,
+                         extract_title(response.text),
+                         extract_subtitle(response.text),
+                         extract_thumbnail(response.text),
+                         extract_content(response.text),
+                         'slack',
+                         ''
+                         ]
+                    data.append(d)
 
                 time.sleep(2)
 
@@ -116,6 +129,7 @@ class MediumScraper():
                 'title',
                 'subtitle',
                 'image',
+                'content',
                 'publication',
                 'date']
 
